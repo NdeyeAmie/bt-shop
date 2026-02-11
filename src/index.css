@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+
+*, :before, :after {
+    box-sizing: border-box;
+    /* border-width: 0;
+    border-style: solid;
+    border-color: #e5e7eb; */
+}
+
+
+body,html {
+  /* font-family: "Times New Roman", Times, serif; */
+  font-family: "Playfair Display", Georgia, serif;
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    scroll-behavior: smooth;
+    background-color: #fff;
+}
+
+input {
+  outline: none;
+}
+
+.round {
+    /* border-radius: 50px; */
+}
+
+
+.btn-acheter {
+   
+}
+
+/* Animations pour le panier vide */
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes swing {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes float-1 {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-20px) translateX(10px);
+    opacity: 0.3;
+  }
+}
+
+@keyframes float-2 {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-15px) translateX(-10px);
+    opacity: 0.3;
+  }
+}
+
+@keyframes float-3 {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-25px) scale(1.2);
+    opacity: 0.2;
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s ease-in-out infinite;
+}
+
+.animate-swing {
+  animation: swing 2s ease-in-out infinite;
+  transform-origin: center top;
+}
+
+.animate-float-1 {
+  animation: float-1 3s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: float-2 3.5s ease-in-out infinite;
+}
+
+.animate-float-3 {
+  animation: float-3 4s ease-in-out infinite;
+}
