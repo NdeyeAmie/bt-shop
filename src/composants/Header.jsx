@@ -190,15 +190,18 @@ function Header() {
 
             {/* Additional Links */}
             <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-              <a href="#" className="block px-4 py-2 text-gray-700 hover:text-[#ffcc00] transition-colors">
-                À propos
-              </a>
-              <a href="#" className="block px-4 py-2 text-gray-700 hover:text-[#ffcc00] transition-colors">
+              <Link to="/boutique" className="block px-4 py-2 text-gray-700 hover:text-[#ffcc00] transition-colors">
+                Boutique
+              </Link>
+              <Link to="/catologue" className="block px-4 py-2 text-gray-700 hover:text-[#ffcc00] transition-colors">
+                Catologue
+              </Link>
+              <Link to="/apropos" className="block px-4 py-2 text-gray-700 hover:text-[#ffcc00] transition-colors">
+                À Propos
+              </Link>
+              <Link to="/contact" className="block px-4 py-2 text-gray-700 hover:text-[#ffcc00] transition-colors">
                 Contact
-              </a>
-              <a href="#" className="block px-4 py-2 text-gray-700 hover:text-[#ffcc00] transition-colors">
-                Aide
-              </a>
+              </Link>
             </div>
           </div>
         )}
