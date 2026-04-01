@@ -1,8 +1,11 @@
 import React from 'react';
 import { useCart } from '../../contexts/CartContext';
 
-const OrderSummary = () => {
+const OrderSummary = ({ savedItems }) => {
   const { cartItems, getCartTotal } = useCart();
+
+  const displayItems = savedItems && savedItems.length > 0 ? savedItems : cartItems;
+
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -12,8 +15,8 @@ const OrderSummary = () => {
     }).format(price);
   };
 
-  const shippingCost = 0; // Livraison gratuite
-  const total = getCartTotal() + shippingCost;
+  const subtotal = displayItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const total = subtotal;
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
@@ -23,7 +26,7 @@ const OrderSummary = () => {
 
       {/* Articles */}
       <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
-        {cartItems.map((item) => (
+        {displayItems.map((item) => (
           <div key={item.id} className="flex gap-3">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg flex-shrink-0">
               <img
@@ -49,7 +52,7 @@ const OrderSummary = () => {
       <div className="space-y-3 border-t border-gray-200 pt-4">
         <div className="flex justify-between font-serif text-gray-600">
           <span>Sous-total</span>
-          <span className="font-semibold">{formatPrice(getCartTotal())}</span>
+          <span className="font-semibold">{formatPrice(subtotal)}</span>
         </div>
         <div className="flex justify-between text-gray-600">
           <span>Livraison</span>

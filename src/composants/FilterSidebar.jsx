@@ -20,9 +20,7 @@ const FilterSidebar = ({ onFilterChange, initialFilters }) => {
   ];
 
   const handleGenreChange = (genreId) => {
-    const newGenre = selectedGenre.includes(genreId)
-      ? selectedGenre.filter(g => g !== genreId)
-      : [...selectedGenre, genreId];
+      const newGenre = selectedGenre.includes(genreId) ? [] : [genreId];
     
     setSelectedGenre(newGenre);
     onFilterChange({
@@ -33,9 +31,7 @@ const FilterSidebar = ({ onFilterChange, initialFilters }) => {
   };
 
   const handleFragranceChange = (fragranceId) => {
-    const newFragrance = selectedFragrance.includes(fragranceId)
-      ? selectedFragrance.filter(f => f !== fragranceId)
-      : [...selectedFragrance, fragranceId];
+    const newFragrance = selectedFragrance.includes(fragranceId) ? [] : [fragranceId];
     
     setSelectedFragrance(newFragrance);
     onFilterChange({
@@ -64,7 +60,7 @@ const FilterSidebar = ({ onFilterChange, initialFilters }) => {
   };
 
   return (
-    <aside className="bg-white rounded-2xl shadow-lg p-6 hidden lg:block w-64 flex-shrink-0">
+    <aside className="bg-white rounded-2xl shadow-lg p-6 lg:block w-64 flex-shrink-0">
         <div className="sticky top-28">
       <h2 className="text-2xl font-serif font-bold text-gray-800 mb-6">
         Filtres

@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { MapPin } from 'lucide-react';
+import axios from 'axios';
+import { useCart } from '../../contexts/CartContext';
 
-const ShippingForm = ({ onSubmit, initialData }) => {
+const ShippingForm = ({ initialData, onSubmit }) => {
+  const { cartItems, clearCart } = useCart();
+
   const [formData, setFormData] = useState(
     initialData || {
       fullName: '',
@@ -15,62 +19,99 @@ const ShippingForm = ({ onSubmit, initialData }) => {
   );
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Effacer l'erreur du champ modifié
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+    setApiError('');
   };
 
   const validate = () => {
     const newErrors = {};
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Le nom complet est requis';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "L'email est requis";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email invalide';
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Le téléphone est requis';
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = "L'adresse est requise";
-    }
-
-    if (!formData.city.trim()) {
-      newErrors.city = 'La ville est requise';
-    }
-
-    if (!formData.postalCode.trim()) {
-      newErrors.postalCode = 'Le code postal est requis';
-    }
-
+    if (!formData.fullName.trim()) newErrors.fullName = 'Le nom complet est requis';
+    if (!formData.email.trim()) newErrors.email = "L'email est requis";
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email invalide';
+    if (!formData.phone.trim()) newErrors.phone = 'Le téléphone est requis';
+    if (!formData.address.trim()) newErrors.address = "L'adresse est requise";
+    if (!formData.city.trim()) newErrors.city = 'La ville est requise';
+    if (!formData.postalCode.trim()) newErrors.postalCode = 'Le code postal est requis';
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = validate();
+    setApiError('');
 
-    if (Object.keys(newErrors).length === 0) {
-      onSubmit(formData);
-    } else {
+    const newErrors = validate();
+    if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      return;
+    }
+
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setApiError('Vous devez être connecté pour passer une commande');
+      return;
+    }
+
+    // ✅ Utiliser cartItems ou le snapshot sessionStorage
+    const savedSnapshot = sessionStorage.getItem('checkout_cart');
+    const itemsToOrder = cartItems.length > 0
+      ? cartItems
+      : (savedSnapshot ? JSON.parse(savedSnapshot) : []);
+
+    if (itemsToOrder.length === 0) {
+      setApiError('Votre panier est vide');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // ✅ Snapshot unique avant clearCart
+      const itemsSnapshot = [...itemsToOrder];
+
+      const items = itemsSnapshot.map((item) => ({
+        product_id: item.id,
+        quantity: item.quantity,
+      }));
+
+      const response = await axios.post(
+        'http://127.0.0.1:8000/api/orders/create/',
+        {
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          postal_code: formData.postalCode,
+          country: formData.country,
+          items: items,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      clearCart(); // ✅ Vider après la requête
+      onSubmit(formData, response.data.id, itemsSnapshot); // ✅ Passer le snapshot
+
+    } catch (err) {
+      if (err.response?.data?.error) {
+        setApiError(err.response.data.error);
+      } else if (err.response?.status === 401) {
+        setApiError('Session expirée, veuillez vous reconnecter');
+      } else {
+        setApiError('Une erreur est survenue. Veuillez réessayer.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,12 +122,15 @@ const ShippingForm = ({ onSubmit, initialData }) => {
         Informations de livraison
       </h2>
 
+      {apiError && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm text-center">
+          {apiError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Nom complet */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Nom complet *
-          </label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Nom complet *</label>
           <input
             type="text"
             name="fullName"
@@ -97,17 +141,12 @@ const ShippingForm = ({ onSubmit, initialData }) => {
             }`}
             placeholder="Jean Dupont"
           />
-          {errors.fullName && (
-            <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
-          )}
+          {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
         </div>
 
-        {/* Email et Téléphone */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Email *
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
             <input
               type="email"
               name="email"
@@ -118,15 +157,10 @@ const ShippingForm = ({ onSubmit, initialData }) => {
               }`}
               placeholder="jean@example.com"
             />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-            )}
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
-
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Téléphone *
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Téléphone *</label>
             <input
               type="tel"
               name="phone"
@@ -137,17 +171,12 @@ const ShippingForm = ({ onSubmit, initialData }) => {
               }`}
               placeholder="+221 77 123 45 67"
             />
-            {errors.phone && (
-              <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
-            )}
+            {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
           </div>
         </div>
 
-        {/* Adresse */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Adresse complète *
-          </label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Adresse complète *</label>
           <input
             type="text"
             name="address"
@@ -158,17 +187,12 @@ const ShippingForm = ({ onSubmit, initialData }) => {
             }`}
             placeholder="123 Rue de la République"
           />
-          {errors.address && (
-            <p className="text-red-500 text-sm mt-1">{errors.address}</p>
-          )}
+          {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
         </div>
 
-        {/* Ville, Code postal, Pays */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Ville *
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Ville *</label>
             <input
               type="text"
               name="city"
@@ -179,15 +203,10 @@ const ShippingForm = ({ onSubmit, initialData }) => {
               }`}
               placeholder="Dakar"
             />
-            {errors.city && (
-              <p className="text-red-500 text-sm mt-1">{errors.city}</p>
-            )}
+            {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
           </div>
-
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Code postal *
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Code postal *</label>
             <input
               type="text"
               name="postalCode"
@@ -198,15 +217,10 @@ const ShippingForm = ({ onSubmit, initialData }) => {
               }`}
               placeholder="12345"
             />
-            {errors.postalCode && (
-              <p className="text-red-500 text-sm mt-1">{errors.postalCode}</p>
-            )}
+            {errors.postalCode && <p className="text-red-500 text-sm mt-1">{errors.postalCode}</p>}
           </div>
-
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Pays *
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Pays *</label>
             <select
               name="country"
               value={formData.country}
@@ -221,14 +235,21 @@ const ShippingForm = ({ onSubmit, initialData }) => {
           </div>
         </div>
 
-        {/* Bouton */}
         <div className="flex justify-center mt-8">
-        <button
-          type="submit"
-          className="w-[300px] bg-[#ffcc00] text-white py-2 rounded-full font-serif text-sm hover:bg-[#e6b800] transition-all transform hover:scale-105 shadow-lg"
-        >
-          Continuer vers le paiement
-        </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-[300px] bg-[#ffcc00] text-white py-3 rounded-full font-serif text-sm hover:bg-[#e6b800] transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                Traitement en cours...
+              </span>
+            ) : (
+              'Confirmer la livraison'
+            )}
+          </button>
         </div>
       </form>
     </div>

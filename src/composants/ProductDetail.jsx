@@ -21,13 +21,13 @@ const ProductDetail = ({ product }) => {
       <Star
         key={index}
         size={20}
-        className={index < rating ? "fill-amber-400 text-amber-400" : "text-gray-300"}
+        className={index < Math.round(rating) ? "fill-amber-400 text-amber-400" : "text-gray-300"}
       />
     ));
   };
 
   const handleIncrement = () => {
-    if (quantity < product.countInStock) {
+    if (quantity < product.count_in_stock) {
       setQuantity(quantity + 1);
     }
   };
@@ -38,19 +38,17 @@ const ProductDetail = ({ product }) => {
     }
   };
 
-  const getTotalPrice = () => {
-    return product.price * quantity;
-  };
+  const getTotalPrice = () => product.price * quantity;
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
     alert(`${quantity} × ${product.title} ajouté(s) au panier!`);
   };
 
-  // Images pour la galerie (image principale + hover image)
+  // ✅ Galerie avec les champs API
   const galleryImages = [product.img];
-  if (product.hoverImg) {
-    galleryImages.push(product.hoverImg);
+  if (product.hover_img) {
+    galleryImages.push(product.hover_img);
   }
 
   return (
@@ -58,7 +56,7 @@ const ProductDetail = ({ product }) => {
       <div className="max-w-7xl mx-auto">
         <div className="overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-8">
-            
+
             {/* Section Gauche - Images */}
             <div className="space-y-4">
               {/* Image Principale */}
@@ -68,11 +66,11 @@ const ProductDetail = ({ product }) => {
                   alt={product.title}
                   className="w-full h-full object-contain p-8"
                 />
-                
+
                 {/* Badge Stock */}
-                {product.countInStock > 0 ? (
+                {product.count_in_stock > 0 ? (
                   <div className="absolute top-4 left-4 bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                    En stock ({product.countInStock} disponibles)
+                    En stock ({product.count_in_stock} disponibles)
                   </div>
                 ) : (
                   <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
@@ -121,14 +119,14 @@ const ProductDetail = ({ product }) => {
                 <h1 className="text-muted-foreground leading-relaxed mb-3 mt-10">
                   {product.title}
                 </h1>
-                
+
                 {/* Rating et Reviews */}
                 <div className="flex items-center gap-3">
                   <div className="flex gap-1">
-                    {renderStars(product.rating)}
+                    {renderStars(product.avg_rating)}
                   </div>
                   <span className="text-gray-600">
-                    {product.rating} ({product.numReviews} avis)
+                    {product.avg_rating} ({product.num_reviews} avis)
                   </span>
                 </div>
               </div>
@@ -140,10 +138,10 @@ const ProductDetail = ({ product }) => {
                 </p>
               </div>
 
-              {/* Prix - Display Flex */}
+              {/* Prix */}
               <div className="flex items-center gap-8">
                 <span className="text-muted-foreground leading-relaxed">Prix:</span>
-                <span className="text-muted-foreground leading-relaxed  font-bold text-gray-800">
+                <span className="text-muted-foreground leading-relaxed font-bold text-gray-800">
                   {formatPrice(getTotalPrice())}
                 </span>
                 {quantity > 1 && (
@@ -153,7 +151,7 @@ const ProductDetail = ({ product }) => {
                 )}
               </div>
 
-              {/* Quantité - Display Flex */}
+              {/* Quantité */}
               <div className="flex items-center gap-10">
                 <label className="text-muted-foreground leading-relaxed">
                   Quantité:
@@ -169,14 +167,14 @@ const ProductDetail = ({ product }) => {
                   <span className="px-6 text-xl font-bold">{quantity}</span>
                   <button
                     onClick={handleIncrement}
-                    disabled={quantity >= product.countInStock}
+                    disabled={quantity >= product.count_in_stock}
                     className="p-3 hover:bg-gray-200 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus size={20} />
                   </button>
                 </div>
                 <span className="text-sm text-gray-500">
-                  {product.countInStock} disponibles
+                  {product.count_in_stock} disponibles
                 </span>
               </div>
 
@@ -184,7 +182,7 @@ const ProductDetail = ({ product }) => {
               <div className="flex items-center justify-between gap-4">
                 <button
                   onClick={handleAddToCart}
-                  disabled={product.countInStock === 0}
+                  disabled={product.count_in_stock === 0}
                   className="w-[50%] bg-[#ffcc00] text-white py-2 rounded-full text-muted-foreground leading-relaxed hover:bg-[#e6b800] transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <ShoppingCart size={24} />

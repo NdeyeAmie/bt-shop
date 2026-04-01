@@ -4,6 +4,7 @@ import Bannier from '../composants/Bannier'
 import ProductGrid from '../composants/ProductCard'
 import InfiniteCarousel from '../composants/InfiniteCarousel'
 import Footer from '../composants/Footer'
+import ReviewsCarousel from '../composants/ReviewsCarousel'
 // import ProductDetaillle from '../composants/ProductDetaillle'
 
 
@@ -15,6 +16,7 @@ export default function Home() {
       <Bannier/>
     <ProductGrid/>
     <InfiniteCarousel/>
+    <ReviewsCarousel/>
     <Footer/>
     {/* <ProductDetaillle/> */}
     </header>

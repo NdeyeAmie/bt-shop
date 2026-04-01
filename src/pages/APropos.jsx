@@ -41,7 +41,7 @@ function APropos() {
                     L'Art de la Parfumerie
                   </h2>
                   <p className="text-gray-600 leading-relaxed mb-4">
-                    D-House Store est né d'une passion pour les parfums d'exception et d'un désir de rendre la parfumerie de luxe accessible aux personnes exigeantes qui apprécient les belles choses.
+                    BTSHOP est né d'une passion pour les parfums d'exception et d'un désir de rendre la parfumerie de luxe accessible aux personnes exigeantes qui apprécient les belles choses.
                   </p>
                   <p className="text-gray-600 leading-relaxed mb-4">
                     Chaque parfum de notre collection est soigneusement sélectionné, avec uniquement les meilleurs ingrédients provenant du monde entier. Des champs de jasmin ensoleillés du Maroc aux forêts rares de oud du Moyen-Orient.

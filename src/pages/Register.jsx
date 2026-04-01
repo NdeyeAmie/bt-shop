@@ -1,153 +1,236 @@
-import React from "react";
+import React, { useState } from "react";
 import { X } from "lucide-react";
 import logo from "../assets/logo.png";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast";
 
-function Register({ isOpen, onClose }) {
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Votre logique d'inscription ici
-    onClose();
+
+function Register({ isOpen, onClose, onSwitchToLogin }) {
+  const [formData, setFormData] = useState({
+    username: "",
+    phone: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+
+  const formatPhone = (value) => {
+    const digits = value.replace(/\D/g, "").slice(0, 9);
+    const parts = [];
+    if (digits.length > 0) parts.push(digits.slice(0, 2));
+    if (digits.length > 2) parts.push(digits.slice(2, 5));
+    if (digits.length > 5) parts.push(digits.slice(5, 7));
+    if (digits.length > 7) parts.push(digits.slice(7, 9));
+    return parts.join(" ");
   };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "phone" ? formatPhone(value) : value,
+    }));
+    // Effacer l'erreur du champ modifié
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    const phoneDigits = formData.phone.replace(/\s/g, "");
+
+    if (!formData.username.trim()) {
+      newErrors.username = "Le nom complet est requis.";
+    } else if (formData.username.trim().length < 3) {
+      newErrors.username = "Le nom doit contenir au moins 3 caractères.";
+    }
+
+    if (!phoneDigits) {
+      newErrors.phone = "Le numéro est requis.";
+    } else if (!/^\d{9}$/.test(phoneDigits)) {
+      newErrors.phone = "Le numéro doit contenir exactement 9 chiffres.";
+    }
+
+    if (!formData.email) {
+      newErrors.email = "L'email est requis.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "L'adresse email est invalide.";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Le mot de passe est requis.";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Le mot de passe doit contenir au moins 6 caractères.";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Veuillez confirmer votre mot de passe.";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Les mots de passe ne correspondent pas.";
+    }
+
+    return newErrors;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setLoading(true);
+try {
+  await axios.post("http://127.0.0.1:8000/api/auth/register/", {
+    username: formData.username,
+    email: formData.email,
+    password: formData.password,
+    phone: formData.phone.replace(/\s/g, ""),
+  });
+
+  toast.success("Compte créé avec succès ! Connectez-vous.");
+  onClose();
+  navigate("/login");
+
+} catch (err) {
+  if (err.response?.data?.error) {
+    toast.error(err.response.data.error);
+  } else {
+    toast.error("Une erreur est survenue. Réessayez.");
+  }
+}
+};
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      ></div>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal Content */}
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4 z-10">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-20"
-        >
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-20">
           <X size={24} />
         </button>
 
-        {/* Modal Body */}
         <div className="p-8">
-          {/* Logo */}
           <div className="flex items-center h-10 w-40 mx-auto mb-6">
             <img src={logo} alt="AK Parfumerie" />
           </div>
 
           <h2 className="text-2xl font-bold text-center mb-6">Créer un compte</h2>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Nom et Prénom */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom
-                </label>
-                <input
-                  type="text"
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ffcc00] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prénom
-                </label>
-                <input
-                  type="text"
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ffcc00] focus:border-transparent"
-                />
-              </div>
+          {/* Erreur API globale */}
+          {errors.api && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm">
+              {errors.api}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+
+            {/* Nom Complet */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nom Complet</label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="Jean Dupont"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ffcc00] focus:border-transparent ${
+                  errors.username ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
+              />
+              {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
             </div>
 
-            {/* Téléphone et Email */}
+            {/* Téléphone + Email */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Numéro de téléphone
-                </label>
-                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#ffcc00] focus-within:border-transparent">
-                  <span className="px-3 bg-gray-50">🇸🇳</span>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Numéro de téléphone</label>
+                <div className={`flex items-center border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#ffcc00] ${
+                  errors.phone ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}>
+                  <span className="px-3 py-2 bg-gray-50 text-sm border-r border-gray-300 whitespace-nowrap">
+                    🇸🇳 +221
+                  </span>
                   <input
                     type="tel"
-                    placeholder="70 123 45 67"
-                    required
-                    className="flex-1 px-4 py-2 outline-none"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="XX XXX XX XX"
+                    className="flex-1 px-3 py-2 outline-none bg-transparent text-sm"
                   />
                 </div>
+                {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                 <input
                   type="email"
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ffcc00] focus:border-transparent"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="jean@example.com"
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ffcc00] focus:border-transparent ${
+                    errors.email ? "border-red-500 bg-red-50" : "border-gray-300"
+                  }`}
                 />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
             </div>
 
             {/* Mot de passe */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mot de passe <span className="text-gray-500 text-xs">(6 caractères au moins)</span>
+                Mot de passe <span className="text-gray-400 text-xs">(6 caractères min)</span>
               </label>
               <input
                 type="password"
-                required
-                minLength={6}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ffcc00] focus:border-transparent"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ffcc00] focus:border-transparent ${
+                  errors.password ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
             </div>
 
-            {/* Confirmation mot de passe */}
+            {/* Confirmation */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirmation du mot de passe
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Confirmation du mot de passe</label>
               <input
                 type="password"
-                required
-                minLength={6}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ffcc00] focus:border-transparent"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ffcc00] focus:border-transparent ${
+                  errors.confirmPassword ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
             </div>
 
-            {/* Bouton S'inscrire */}
             <button
               type="submit"
-              className="w-full bg-[#ffcc00] text-gray-900 font-semibold py-3 rounded-lg hover:bg-[#e6b800] transition-colors"
+              disabled={loading}
+              className="w-full bg-[#ffcc00] text-gray-900 font-semibold py-3 rounded-lg hover:bg-[#e6b800] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              S'inscrire
-            </button>
-
-            {/* Bouton Google */}
-            <button
-              type="button"
-              className="w-full flex items-center justify-center gap-3 border-2 border-gray-300 py-3 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18">
-                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
-                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-                <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.335z"/>
-                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
-              </svg>
-              <span className="font-medium">Inscris-toi avec Google</span>
+              {loading ? "Inscription en cours..." : "S'inscrire"}
             </button>
           </form>
 
-          {/* Footer */}
           <p className="text-center text-sm text-gray-600 mt-6">
             Tu as déjà un compte?{" "}
-            <button
-              onClick={onClose}
-              className="text-[#ffcc00] font-bold hover:underline"
-            >
+            <button onClick={onSwitchToLogin} className="text-[#ffcc00] font-bold hover:underline">
               Connecte-toi ici
             </button>
           </p>
